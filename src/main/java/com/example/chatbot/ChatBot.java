@@ -1,12 +1,5 @@
 package com.example.chatbot;
 
-import io.github.amithkoujalgi.ollama4j.core.OllamaAPI;
-import io.github.amithkoujalgi.ollama4j.core.exceptions.OllamaBaseException;
-import io.github.amithkoujalgi.ollama4j.core.models.chat.OllamaChatMessageRole;
-import io.github.amithkoujalgi.ollama4j.core.models.chat.OllamaChatRequestBuilder;
-import io.github.amithkoujalgi.ollama4j.core.models.chat.OllamaChatRequestModel;
-import io.github.amithkoujalgi.ollama4j.core.models.chat.OllamaChatResult;
-import io.github.amithkoujalgi.ollama4j.core.types.OllamaModelType;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -25,7 +18,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ChatBot extends Application {
 
@@ -42,6 +36,7 @@ public class ChatBot extends Application {
     private VBox inputBox;
     private Scene scene;
     private StackPane chatArea;
+    private List<String> conversationHistory = new ArrayList<>();
 
     public static void main(String[] args) {
         launch(args);
@@ -90,6 +85,7 @@ public class ChatBot extends Application {
         sendButton.setPrefWidth(55);
         sendButton.setStyle("-fx-background-color: lightgrey");
 
+
         userInputBox = new HBox(10);
         userInputBox.getChildren().addAll(promptLabel, userInputField, sendButton);
 
@@ -131,9 +127,17 @@ public class ChatBot extends Application {
     private void sendMessage() throws Exception {
         String userMessage = userInputField.getText();
 
-        // Display user message in conversation area
+        // Add user message to history
+        conversationHistory.add(userMessage);
+
         conversationArea.appendText("You: " + userMessage + "\n");
-        conversationArea.appendText("Chatbot: " + generateResponse(userMessage) + "\n");
+
+        // Get bot response and add it to history
+        String[] botResponse = OllamaAPI.askOllama(userMessage, conversationHistory);
+        conversationHistory.add(botResponse[0]);
+
+        conversationArea.appendText("Chatbot: " + botResponse[0] + "\n");
+
         conversationArea.appendText("\n");
 
         scrollPane.setVvalue(1.0);
@@ -141,25 +145,6 @@ public class ChatBot extends Application {
         // Clear user input
         userInputField.clear();
     }
-
-
-    public static String generateResponse(String userMessage) throws OllamaBaseException, IOException, InterruptedException {
-        String host = "http://localhost:11434/";
-        OllamaAPI ollamaAPI = new OllamaAPI(host);
-
-        OllamaChatRequestBuilder builder = OllamaChatRequestBuilder.getInstance(OllamaModelType.LLAMA2);
-
-        OllamaChatRequestModel requestModel = builder.withMessage(OllamaChatMessageRole.USER, userMessage)
-                .build();
-
-        // start conversation with model
-        OllamaChatResult chatResult = ollamaAPI.chat(requestModel);
-        System.out.println(chatResult.getResponse());
-        return chatResult.getResponse();
-
-        // create next userQuestion
-        // requestModel = builder.withMessages(chatResult.getChatHistory()).withMessage(OllamaChatMessageRole.USER, "And what is the second largest city?").build();
-    }
-
-
 }
+
+

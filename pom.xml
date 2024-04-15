@@ -16,14 +16,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.github.amithkoujalgi</groupId>
-            <artifactId>ollama4j</artifactId>
-            <version>1.0.63</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
-            <version>2.0.9</version> <!--Replace with appropriate version-->
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20210307</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
