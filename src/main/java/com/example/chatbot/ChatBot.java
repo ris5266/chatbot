@@ -144,8 +144,6 @@ public class ChatBot extends Application {
         String[] botResponse = OllamaAPI.askOllama(userMessage, conversationHistory, systemPrompt);
         conversationHistory.add(botResponse[0]);
 
-
-
         conversationArea.appendText(characterInformation.get(0).substring(0, 1).toUpperCase() + characterInformation.get(0).substring(1) + ": " + botResponse[0] + "\n");
 
         conversationArea.appendText("\n");
