@@ -37,6 +37,12 @@ public class ChatBot extends Application {
     private Scene scene;
     private StackPane chatArea;
     private List<String> conversationHistory = new ArrayList<>();
+    private List<String> characterInformation;
+    private String systemPrompt;
+
+    public ChatBot(List<String> characterInformation) {
+        this.characterInformation = characterInformation;
+    }
 
     public static void main(String[] args) {
         launch(args);
@@ -127,16 +133,20 @@ public class ChatBot extends Application {
     private void sendMessage() throws Exception {
         String userMessage = userInputField.getText();
 
+        systemPrompt = "You are " + characterInformation.get(0) + ". " + characterInformation.get(2);
+
         // Add user message to history
         conversationHistory.add(userMessage);
 
         conversationArea.appendText("You: " + userMessage + "\n");
 
         // Get bot response and add it to history
-        String[] botResponse = OllamaAPI.askOllama(userMessage, conversationHistory);
+        String[] botResponse = OllamaAPI.askOllama(userMessage, conversationHistory, systemPrompt);
         conversationHistory.add(botResponse[0]);
 
-        conversationArea.appendText("Chatbot: " + botResponse[0] + "\n");
+
+
+        conversationArea.appendText(characterInformation.get(0).substring(0, 1).toUpperCase() + characterInformation.get(0).substring(1) + ": " + botResponse[0] + "\n");
 
         conversationArea.appendText("\n");
 

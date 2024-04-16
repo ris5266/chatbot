@@ -20,10 +20,10 @@ public class OllamaAPI {
                 .replace("\n", "\\n");
     }
 
-    static String[] askOllama(String message, List<String> history) throws URISyntaxException, IOException, InterruptedException {
+    static String[] askOllama(String message, List<String> history, String systemPrompt) throws URISyntaxException, IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
 
-        String model = "mayflowergmbh/wiedervereinigung";
+        String model = "llama2";
         boolean stream = false;
         String[] antwort = new String[2];
 
@@ -35,7 +35,7 @@ public class OllamaAPI {
         String historyString = String.join("\\n", cleanedHistory);
         System.out.println(historyString);
 
-        String systemMessage = "Halte deine Antworten kurz";
+        String systemMessage = systemPrompt + ". Act like your the bestfriend and just talk casually. Keep your responses short and to the point. Only response to the last sentence the user sends you. Dont send any emojis";
         String json = "{"
                 + "\"model\":\"" + model + "\","
                 + "\"system\":\"" + systemMessage + "\","
