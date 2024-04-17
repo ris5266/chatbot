@@ -14,32 +14,21 @@ import java.util.List;
 
 public class OllamaAPI {
 
-    private static String cleanString(String str) {
-        return str.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n");
-    }
-
-    static String[] askOllama(String message, List<String> history, String systemPrompt) throws URISyntaxException, IOException, InterruptedException {
+    static String[] askOllama(String message, String history, String systemPrompt) throws URISyntaxException, IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
 
         String model = "llama2";
         boolean stream = false;
         String[] antwort = new String[2];
 
-        // Convert history list to a single string
-        List<String> cleanedHistory = new ArrayList<>();
-        for (String str : history) {
-            cleanedHistory.add(cleanString(str));
-        }
-        String historyString = String.join("\\n", cleanedHistory);
-        System.out.println(historyString);
+
+        System.out.println(history);
 
         String systemMessage = systemPrompt + ". Act like your the bestfriend and just talk casually. Keep your responses short and to the point. Only response to the last sentence the user sends you. Dont send any emojis";
         String json = "{"
                 + "\"model\":\"" + model + "\","
                 + "\"system\":\"" + systemMessage + "\","
-                + "\"prompt\":\"" + historyString + "\\n" + message + "\","
+                + "\"prompt\":\"" + history + "\\n" + "User: " + message + "\","
                 + "\"stream\":" + stream
                 + "}";
 

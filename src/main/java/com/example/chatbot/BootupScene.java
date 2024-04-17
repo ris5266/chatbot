@@ -4,10 +4,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
@@ -68,13 +65,25 @@ public class BootupScene extends Application {
         iconView.setFitWidth(300);
         pane.setAlignment(Pos.CENTER);
 
-        CheckBox female = new CheckBox();
+
+        RadioButton female = new RadioButton();
         female.setText("Female");
-        CheckBox male = new CheckBox();
+        RadioButton male = new RadioButton();
         male.setText("Male");
         female.setTextAlignment(TextAlignment.CENTER);
         male.setTextAlignment(TextAlignment.CENTER);
         progressBar = new ProgressBar();
+
+        female.setOnAction(e-> {
+            male.setSelected(false);
+            submit.setDisable(false);
+
+        });
+
+        male.setOnAction(e-> {
+            female.setSelected(false);
+            submit.setDisable(false);
+        });
 
         // disable submit button
         submit.setDisable(true);
@@ -91,16 +100,28 @@ public class BootupScene extends Application {
                 characterInformation.add(textfield.getText());
                 question.setText("How would you describe your chat partner?");
                 textfield.clear();
+                submit.setDisable(true);
+
                 counter++;
             } else if(counter == 1) {
-                    characterInformation.add(textfield.getText());
-                    textfield.clear();
-                    question.setText("Is your chat partner a female or male?");
+                characterInformation.add(textfield.getText());
+                textfield.clear();
+                submit.setDisable(true);
+
+                question.setText("Is your chat partner a female or male?");
                 vbox.getChildren().addAll(female, male);
                 grid.getChildren().removeIf( node -> textfield.equals(node));
-                    counter++;
+                counter++;
         } else if(counter == 2) {
+                submit.setDisable(true);
+
             characterInformation.add(textfield.getText());
+            if(female.isSelected()) {
+                characterInformation.add("Female");
+            } else {
+                characterInformation.add("Male");
+            }
+
             submit.setVisible(false);
             question.setText("Thank you, your chat partner is being created...");
             vbox.getChildren().add(progressBar);
