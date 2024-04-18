@@ -1,11 +1,7 @@
 package com.example.chatbot;
 
-import javafx.animation.FadeTransition;
 import javafx.application.Application;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -15,29 +11,15 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
-import javafx.scene.text.Font;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import javafx.util.Duration;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class ChatBot extends Application {
 
-    private TextArea conversationArea;
-    private TextField userInputField;
-    private Button sendButton;
+    private TextArea chat;
+    private TextField chatinput;
     private ScrollPane scrollPane;
-    private BorderPane root;
-    private Image chatbotImage;
-    private HBox chatBox;
-    private Label promptLabel;
-    private ImageView imageView;
-    private HBox userInputBox;
-    private VBox inputBox;
-    private Scene scene;
-    private StackPane chatArea;
     private String conversationHistory;
     private List<String> characterInformation;
     private String systemPrompt;
@@ -56,140 +38,95 @@ public class ChatBot extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        root = new BorderPane();
-        root.setStyle("-fx-background-color: #fdfdfb;");
-        root.setCenter(chatBox);
-        HBox vbox2 = new HBox();
-        conversationArea = new TextArea();
-        conversationArea.setEditable(false);
-        conversationArea.setPrefHeight(700);
-        conversationArea.setPrefHeight(700);
-        conversationArea.setFont(Font.font(16));
-        conversationArea.setStyle("-fx-background-color: white; -fx-border-color: #cfe8f3; -fx-border-width: 3px;");
-        conversationArea.setWrapText(true);
+        HBox splitter = new HBox();
+        splitter.setStyle("-fx-background-color: #121212;");
+        splitter.setPrefHeight(750);
+        splitter.setPrefWidth(1000);
+        splitter.setSpacing(20);
+        VBox left = new VBox();
+        left.setStyle("-fx-background-color:  #1d1d1d;");
+left.setPrefHeight(571);
+        left.setPrefWidth(107);
+        left.setPadding(new Insets(10, 10, 10, 10));
 
-        scrollPane = new ScrollPane(conversationArea);
+        FlowPane placeholder = new FlowPane();
+        placeholder.setPrefHeight(510);
+        placeholder.setPrefWidth(107);
+        left.getChildren().add(placeholder);
+        VBox charactervbox = new VBox();
+        charactervbox.setPrefHeight(742);
+        charactervbox.setPrefWidth(107);
+        Button newCharacter = new Button("Create Character");
+        newCharacter.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5");
+        newCharacter.setPrefHeight(33);
+        newCharacter.setPrefWidth(107);
+        Button testcharacter = new Button("Peter");
+        testcharacter.setStyle("-fx-background-color: #1d1d1d;");
+        testcharacter.setPrefHeight(33);
+        testcharacter.setPrefWidth(107);
+        Button testcharacter1 = new Button("Klaus");
+        testcharacter1.setStyle("-fx-background-color: #1d1d1d;");
+        testcharacter1.setPrefHeight(33);
+        testcharacter1.setPrefWidth(107);
+        charactervbox.getChildren().addAll(newCharacter, testcharacter, testcharacter1);
+        FlowPane settingspane = new FlowPane();
+        settingspane.setPadding(new Insets(0, 0, 5, 0));
+        Button settings = new Button("Settings");
+        settings.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill:  #e5e5e5;");
+        settingspane.getChildren().add(settings);
+        settings.setPrefHeight(33);
+        settings.setPrefWidth(107);
+        left.getChildren().addAll(charactervbox, settingspane);
+
+        VBox right = new VBox();
+        right.setPrefHeight(689);
+        right.setPrefWidth(855);
+
+        chat = new TextArea();
+        chat.setPrefHeight(794);
+        chat.setPrefWidth(855);
+        chat.setWrapText(true);
+        chat.setEditable(false);
+        chat.setStyle("-fx-font-size: 15px; -fx-font-family: 'Arial'");
+
+        scrollPane = new ScrollPane(chat);
         scrollPane.setFitToWidth(true);
         scrollPane.setVvalue(1.0);
-        chatArea = new StackPane(scrollPane);
 
-        // Add vertical image on the right side
-        chatbotImage = new Image("chatbot.png");
-        imageView = new ImageView(chatbotImage);
-        imageView.setPreserveRatio(true);
-        imageView.setFitHeight(400);
-        imageView.setFitWidth(400);
-
-        chatBox = new HBox(10);
-        chatBox.setAlignment(Pos.BOTTOM_CENTER);
-        chatBox.getChildren().addAll(conversationArea, imageView);
-
-        // User input
-        promptLabel = new Label();
-        userInputField = new TextField();
-        userInputField.setPrefHeight(30);
-        userInputField.setFont(Font.font(16));
-        userInputField.setPrefWidth(820);
-
-        sendButton = new Button("Send");
-        sendButton.setDefaultButton(true);
-        sendButton.setPrefHeight(35);
-        sendButton.setPrefWidth(150);
-        sendButton.setStyle("-fx-background-color: lightgrey");
-        sendButton.setDisable(true);
+        VBox container = new VBox(chat);
+        VBox.setMargin(chat, new Insets(20, 50, 20, 0)); // top, right, bottom, left margins
 
 
-        userInputField.setOnKeyReleased(e -> {
-            if (userInputField.getText().isEmpty()) {
-                sendButton.setDisable(true);
+        HBox chatinputbox = new HBox();
+        chatinputbox.setSpacing(10);
+        chatinputbox.setPadding(new Insets(5, 5, 10, 5));
+        chatinputbox.setPrefHeight(35);
+        chatinputbox.setPrefWidth(895);
+
+        chatinput = new TextField();
+        chatinput.setPrefHeight(31);
+        chatinput.setPrefWidth(788);
+        Button send = new Button("Send");
+        send.setPrefHeight(38);
+        send.setPrefWidth(105);
+
+        send.setDisable(true);
+
+        send.setStyle("-fx-background-color: white;");
+        chatinputbox.getChildren().addAll(chatinput, send);
+        right.getChildren().addAll(container, chatinputbox);
+
+        chatinput.setOnKeyReleased(e -> {
+            if (chatinput.getText().isEmpty()) {
+                send.setDisable(true);
             } else {
-                sendButton.setDisable(false);
+                send.setDisable(false);
             }
         });
 
-
-        sendButton.setOnMouseEntered(e -> {
-            sendButton.setStyle("-fx-background-color: #d38383");
-
-        });
-
-        sendButton.setOnMouseExited(e -> {
-            sendButton.setStyle("-fx-background-color: lightgray");
-
-        });
-
-        userInputBox = new HBox(10);
-        userInputBox.getChildren().addAll(promptLabel, userInputField, sendButton);
-
-        inputBox = new VBox(10, chatBox, userInputBox);
-
-        root.setCenter(inputBox);
-        VBox menu = new VBox();
-        vbox2.setSpacing(10);
-        menu.setAlignment(Pos.CENTER);
-        Button newCharacter = new Button("Create Character");
-        newCharacter.setStyle("-fx-background-color: lightblue;");
-        Button test = new Button("Peter");
-        test.setStyle("-fx-background-color: white;");
-        Button test1 = new Button("Klaus");
-        test1.setStyle("-fx-background-color: white;");
-
-        Button test2 = new Button("Tim");
-        test2.setStyle("-fx-background-color: white;");
-
-
-        newCharacter.setPrefWidth(250);
-        test.setPrefWidth(250);
-        test1.setPrefWidth(250);
-        test2.setPrefWidth(250);
-        VBox charactervbox = new VBox();
-        charactervbox.getChildren().addAll(newCharacter, test, test1, test2);
-        charactervbox.setPrefHeight(500);
-        menu.getChildren().addAll(charactervbox);
-
-
-        vbox2.setPrefWidth(500);
-        menu.setStyle("-fx-background-color: white;");
-
-        // settings button
-        FlowPane settingspane = new FlowPane();
-        settingspane.setAlignment(Pos.CENTER);
-        Button settings = new Button("Settings");
-        settings.setStyle("-fx-background-color: white");
-        settingspane.getChildren().add(settings);
-        settingspane.setPrefHeight(33);
-        settingspane.setPrefWidth(201);
-        settings.setPrefWidth(201);
-
-
-        settings.setOnMouseEntered(e -> {
-            settings.setStyle("-fx-background-color: lightblue");
-        });
-        settings.setOnMouseExited(e -> {
-            settings.setStyle("-fx-background-color: white");
-        });
-
-        newCharacter.setOnMouseEntered(e -> {
-            newCharacter.setStyle("-fx-background-color: #69bed9");
-        });
-        newCharacter.setOnMouseExited(e -> {
-            newCharacter.setStyle("-fx-background-color: lightblue");
-        });
-
-        menu.getChildren().add(settingspane);
-
-        vbox2.getChildren().addAll(menu, inputBox);
-
-        scene = new Scene(vbox2, 1000, 750);
-
-        primaryStage.setTitle("Chatbot");
-        primaryStage.setResizable(false);
-        primaryStage.getIcons().add(new Image("icon.jpg"));
-        primaryStage.setScene(scene);
-        primaryStage.show();
-
-        sendButton.setOnAction(e -> {
-            if (userInputField.getText().isEmpty()) {
+        send.setOnAction(e -> {
+            System.out.println("hi");
+            if (!chatinput.getText().isEmpty()) {
                 try {
                     sendMessage();
                 } catch (Exception ex) {
@@ -197,29 +134,76 @@ public class ChatBot extends Application {
                 }
             }
         });
+
+        settings.setOnMouseEntered(e -> {
+            settings.setStyle("-fx-border-color: white; -fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5;");
+        });
+        settings.setOnMouseExited(e -> {
+            settings.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5;");
+        });
+
+        testcharacter.setOnMouseEntered(e -> {
+            testcharacter.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5;");
+        });
+        testcharacter.setOnMouseExited(e -> {
+            testcharacter.setStyle("-fx-background-color: #1d1d1d;");
+        });
+
+        testcharacter1.setOnMouseEntered(e -> {
+            testcharacter1.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5;");
+        });
+        testcharacter1.setOnMouseExited(e -> {
+            testcharacter1.setStyle("-fx-background-color: #1d1d1d;");
+        });
+
+        newCharacter.setOnMouseEntered(e -> {
+            newCharacter.setStyle("-fx-border-color: white; -fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5;");
+        });
+        newCharacter.setOnMouseExited(e -> {
+            newCharacter.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5;");
+        });
+
+        chatinput.setOnAction(e -> {
+            if (!chatinput.getText().isEmpty()) {
+                send.fire();
+            }
+        });
+
+        splitter.getChildren().addAll(left, right);
+        Scene scene = new Scene(splitter, 1000, 750);
+        primaryStage.setTitle("ChatBot");
+        primaryStage.getIcons().add(new Image("icon.jpeg"));
+
+        primaryStage.setScene(scene);
+        primaryStage.show();
     }
 
     private void sendMessage() throws Exception {
-        String userMessage = userInputField.getText();
+        String userMessage = chatinput.getText();
 
+//        systemPrompt = "You are Peter a virtual chatbot";
         systemPrompt = "You are " + characterInformation.get(0) + ". " + characterInformation.get(2);
 
         // Add user message to history
         conversationHistory += ". User: " + userMessage;
 
-        conversationArea.appendText("You: " + userMessage + "\n");
+        chat.appendText("You: " + userMessage + "\n");
 
         // Get bot response and add it to history
         String[] botResponse = OllamaAPI.askOllama(userMessage, conversationHistory, systemPrompt);
         conversationHistory += ". ChatBot: " + botResponse[0];
+        if(botResponse[0] == null) {
+            conversationHistory = "";
+        }
 
-        conversationArea.appendText(characterInformation.get(0).substring(0, 1).toUpperCase() + characterInformation.get(0).substring(1) + ": " + botResponse[0] + "\n");
 
-        conversationArea.appendText("\n");
+        chat.appendText(characterInformation.get(0).substring(0, 1).toUpperCase() + characterInformation.get(0).substring(1) + ": " + botResponse[0] + "\n");
+
+        chat.appendText("\n");
 
         scrollPane.setVvalue(1.0);
 
-        userInputField.clear();
+        chatinput.clear();
     }
 }
 

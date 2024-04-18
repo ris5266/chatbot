@@ -24,7 +24,7 @@ public class OllamaAPI {
 
         System.out.println(history);
 
-        String systemMessage = systemPrompt + ". Act like your the bestfriend and just talk casually. Keep your responses short and to the point. Only response to the last sentence the user sends you. Dont send any emojis";
+        String systemMessage = systemPrompt + ". Act like your the bestfriend and just talk casually. Keep your responses short and to the point. Only response to the last sentence the user sends you. You are not an AI or an chatbot, so dont behave like one. Dont send any emojis";
         String json = "{"
                 + "\"model\":\"" + model + "\","
                 + "\"system\":\"" + systemMessage + "\","
