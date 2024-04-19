@@ -18,6 +18,7 @@ public class ChatBot extends Application {
     private String conversationHistory;
     private String systemPrompt;
     private VBox charactervbox;
+    private Button currentCharacterButton = null;
 
     public static void main(String[] args) {
         launch(args);
@@ -49,10 +50,18 @@ public class ChatBot extends Application {
             characterButton.setPrefWidth(107);
 
             characterButton.setOnMouseEntered(e -> {
-                characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5;");
+                if (characterButton == currentCharacterButton) {
+                    characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: orange;");
+                } else {
+                    characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5;");
+                }
             });
             characterButton.setOnMouseExited(e -> {
-                characterButton.setStyle("-fx-background-color: #1d1d1d;");
+                if (characterButton == currentCharacterButton) {
+                    characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: orange;");
+                } else {
+                    characterButton.setStyle("-fx-background-color: #1d1d1d;");
+                }
             });
 
             characterButton.setOnAction(e -> {
@@ -61,6 +70,15 @@ public class ChatBot extends Application {
                 systemPrompt = "You are " + name + ". " + character.getString("description");
                 currentDescription = character.getString("description");
                 currentName = name;
+
+                // Change the text color of the previously selected button back to its original color
+                if (currentCharacterButton != null) {
+                    currentCharacterButton.setStyle("-fx-background-color: #1d1d1d;");
+                }
+
+                // Change the text color of the newly selected button to red
+                characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: orange;");
+                currentCharacterButton = characterButton;
             });
 
             // delete character on right-click
@@ -159,7 +177,7 @@ public class ChatBot extends Application {
         charactervbox.getChildren().addAll(newCharacter);
         FlowPane settingspane = new FlowPane();
         settingspane.setPadding(new Insets(0, 0, 5, 0));
-        Button settings = new Button("Settings");
+        Button settings = new Button("Edit Character");
         settings.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill:  #e5e5e5;");
         settingspane.getChildren().add(settings);
         settings.setPrefHeight(33);
@@ -234,6 +252,64 @@ public class ChatBot extends Application {
         });
         newCharacter.setOnMouseExited(e -> {
             newCharacter.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5;");
+        });
+
+        settings.setOnAction(e -> {
+            Stage editCharacterStage = new Stage();
+            editCharacterStage.setTitle("Edit Character");
+            editCharacterStage.getIcons().add(new Image("icon.jpeg"));
+            editCharacterStage.initOwner(primaryStage);
+            editCharacterStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+
+            // input & submit
+            Label nameLabel = new Label("Character name:");
+            TextField nameField = new TextField(currentName);
+            Label descriptionLabel = new Label("Character description:");
+            TextArea descriptionField = new TextArea(currentDescription);
+            RadioButton femaleButton = new RadioButton("Female");
+            RadioButton maleButton = new RadioButton("Male");
+            ToggleGroup genderGroup = new ToggleGroup();
+            femaleButton.setToggleGroup(genderGroup);
+            maleButton.setToggleGroup(genderGroup);
+
+            // Pre-select the gender of the current character
+            JSONObject characters = JSONReader.readCharacters();
+            if (characters.has(currentName)) {
+                JSONObject currentCharacter = characters.getJSONObject(currentName);
+                String currentGender = currentCharacter.getString("gender").toLowerCase();
+                if ("female".equals(currentGender)) {
+                    femaleButton.setSelected(true);
+                } else if ("male".equals(currentGender)) {
+                    maleButton.setSelected(true);
+                }
+            }
+
+            Button submitButton = new Button("Submit");
+
+            // submit action
+            submitButton.setOnAction(event -> {
+                String name = nameField.getText();
+                String description = descriptionField.getText();
+                String gender = ((RadioButton) genderGroup.getSelectedToggle()).getText();
+
+                JSONReader.writeCharacter(name, description, gender);
+
+                // update current scene
+                ChatBot chatBot = new ChatBot();
+                try {
+                    chatBot.start(primaryStage);
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+                editCharacterStage.close();
+            });
+
+            VBox formLayout = new VBox(10, nameLabel, nameField, descriptionLabel, descriptionField, femaleButton, maleButton, submitButton);
+            formLayout.setPadding(new Insets(10));
+
+            editCharacterStage.setScene(new Scene(formLayout));
+            editCharacterStage.setResizable(false);
+            editCharacterStage.show();
         });
 
         chatinput.setOnAction(e -> {
