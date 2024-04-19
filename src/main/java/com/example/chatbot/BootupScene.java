@@ -74,13 +74,13 @@ public class BootupScene extends Application {
         male.setTextAlignment(TextAlignment.CENTER);
         progressBar = new ProgressBar();
 
-        female.setOnAction(e-> {
+        female.setOnAction(e -> {
             male.setSelected(false);
             submit.setDisable(false);
 
         });
 
-        male.setOnAction(e-> {
+        male.setOnAction(e -> {
             female.setSelected(false);
             submit.setDisable(false);
         });
@@ -96,56 +96,56 @@ public class BootupScene extends Application {
             }
         });
         submit.setOnAction(e -> {
-            if(counter == 0) {
+            if (counter == 0) {
                 characterInformation.add(textfield.getText());
                 question.setText("How would you describe your chat partner?");
                 textfield.clear();
                 submit.setDisable(true);
 
                 counter++;
-            } else if(counter == 1) {
+            } else if (counter == 1) {
                 characterInformation.add(textfield.getText());
                 textfield.clear();
                 submit.setDisable(true);
 
                 question.setText("Is your chat partner a female or male?");
                 vbox.getChildren().addAll(female, male);
-                grid.getChildren().removeIf( node -> textfield.equals(node));
+                grid.getChildren().removeIf(node -> textfield.equals(node));
                 counter++;
-        } else if(counter == 2) {
+            } else if (counter == 2) {
                 submit.setDisable(true);
 
-            characterInformation.add(textfield.getText());
-            if(female.isSelected()) {
-                characterInformation.add("Female");
-            } else {
-                characterInformation.add("Male");
-            }
-
-            submit.setVisible(false);
-            question.setText("Thank you, your chat partner is being created...");
-            vbox.getChildren().add(progressBar);
-            female.setVisible(false);
-            male.setVisible(false);
-
-            new Thread(() -> {
-                try {
-                    TimeUnit.SECONDS.sleep(8);
-                } catch (InterruptedException ex) {
-                    throw new RuntimeException(ex);
+                characterInformation.add(textfield.getText());
+                if (female.isSelected()) {
+                    characterInformation.add("Female");
+                } else {
+                    characterInformation.add("Male");
                 }
 
-                Platform.runLater(() -> {
-                    ChatBot chatBot = new ChatBot(characterInformation);
+                submit.setVisible(false);
+                question.setText("Thank you, your chat partner is being created...");
+                vbox.getChildren().add(progressBar);
+                female.setVisible(false);
+                male.setVisible(false);
+
+                new Thread(() -> {
                     try {
-                        chatBot.start(primaryStage);
-                    } catch (Exception ex) {
+                        TimeUnit.SECONDS.sleep(8);
+                    } catch (InterruptedException ex) {
                         throw new RuntimeException(ex);
                     }
-                });
-            }).start();
-        }
-    });
+
+                    Platform.runLater(() -> {
+                        ChatBot chatBot = new ChatBot();
+                        try {
+                            chatBot.start(primaryStage);
+                        } catch (Exception ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    });
+                }).start();
+            }
+        });
 
         // field + button
         grid.add(textfield, 0, 0);
