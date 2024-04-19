@@ -27,7 +27,7 @@ public class JSONReader {
         }
     }
 
-    public static void writeCharacter(String name, String description, String gender) {
+    public static void createCharacter(String name, String description, String gender) {
         JSONObject character = new JSONObject();
         name = name.substring(0, 1).toUpperCase() + name.substring(1);
         character.put("name", name);
@@ -84,4 +84,40 @@ public class JSONReader {
             }
         }
     }
+
+    public static void overwriteCharacter(String key, String name, String description, String gender) {
+        JSONObject character = new JSONObject();
+        name = name.substring(0, 1).toUpperCase() + name.substring(1);
+        character.put("name", name);
+        character.put("description", description);
+        character.put("gender", gender);
+
+        // read out config.json
+        JSONObject config;
+        try {
+            config = new JSONObject(new String(Files.readAllBytes(Paths.get("config.json"))));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // try reading all characters or create new characters object
+        JSONObject characters;
+        if (config.has("characters")) {
+            characters = config.getJSONObject("characters");
+        } else {
+            characters = new JSONObject();
+        }
+
+        // overwrite existing character or add new character
+        characters.put(key, character);
+        config.put("characters", characters);
+
+        // overwrite json file
+        try (FileWriter file = new FileWriter("config.json")) {
+            file.write(config.toString(4));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
 }

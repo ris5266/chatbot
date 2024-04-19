@@ -9,9 +9,19 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import org.json.JSONObject;
 
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import java.io.File;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.*;
+
 public class ChatBot extends Application {
     private String currentName;
     private String currentDescription;
+    private String currentGender;
     private TextArea chat;
     private TextField chatinput;
     private ScrollPane scrollPane;
@@ -34,10 +44,12 @@ public class ChatBot extends Application {
         // Get the name and description of the first character
         currentName = firstCharacter.getString("name");
         currentDescription = firstCharacter.getString("description");
+        currentGender = firstCharacter.getString("gender");
     }
 
     private void loadCharacters() {
         JSONObject characters = JSONReader.readCharacters();
+        boolean isFirstCharacter = true;
 
         // create button for each character
         for (String key : characters.keySet()) {
@@ -56,6 +68,7 @@ public class ChatBot extends Application {
                     characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5;");
                 }
             });
+
             characterButton.setOnMouseExited(e -> {
                 if (characterButton == currentCharacterButton) {
                     characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: orange;");
@@ -79,6 +92,7 @@ public class ChatBot extends Application {
                 // Change the text color of the newly selected button to red
                 characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: orange;");
                 currentCharacterButton = characterButton;
+
             });
 
             // delete character on right-click
@@ -100,6 +114,12 @@ public class ChatBot extends Application {
                 contextMenu.show(characterButton, e.getScreenX(), e.getScreenY());
             });
             charactervbox.getChildren().add(characterButton);
+
+            if (isFirstCharacter) {
+                characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: orange;");
+                currentCharacterButton = characterButton;
+                isFirstCharacter = false;
+            }
         }
     }
 
@@ -154,7 +174,7 @@ public class ChatBot extends Application {
                 String description = descriptionField.getText();
                 String gender = ((RadioButton) genderGroup.getSelectedToggle()).getText();
 
-                JSONReader.writeCharacter(name, description, gender);
+                JSONReader.createCharacter(name, description, gender);
 
                 // update current scene
                 ChatBot chatBot = new ChatBot();
@@ -254,6 +274,7 @@ public class ChatBot extends Application {
             newCharacter.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5;");
         });
 
+
         settings.setOnAction(e -> {
             Stage editCharacterStage = new Stage();
             editCharacterStage.setTitle("Edit Character");
@@ -272,16 +293,10 @@ public class ChatBot extends Application {
             femaleButton.setToggleGroup(genderGroup);
             maleButton.setToggleGroup(genderGroup);
 
-            // Pre-select the gender of the current character
-            JSONObject characters = JSONReader.readCharacters();
-            if (characters.has(currentName)) {
-                JSONObject currentCharacter = characters.getJSONObject(currentName);
-                String currentGender = currentCharacter.getString("gender").toLowerCase();
-                if ("female".equals(currentGender)) {
-                    femaleButton.setSelected(true);
-                } else if ("male".equals(currentGender)) {
-                    maleButton.setSelected(true);
-                }
+            if ("Female".equals(currentGender)) {
+                femaleButton.setSelected(true);
+            } else if ("Male".equals(currentGender)) {
+                maleButton.setSelected(true);
             }
 
             Button submitButton = new Button("Submit");
@@ -292,7 +307,19 @@ public class ChatBot extends Application {
                 String description = descriptionField.getText();
                 String gender = ((RadioButton) genderGroup.getSelectedToggle()).getText();
 
-                JSONReader.writeCharacter(name, description, gender);
+                String currentCharacterKey = null;
+                JSONObject characters = JSONReader.readCharacters();
+                for (String key : characters.keySet()) {
+                    JSONObject character = characters.getJSONObject(key);
+                    if (character.getString("name").equals(currentName)) {
+                        currentCharacterKey = key;
+                        break;
+                    }
+                }
+
+                if (currentCharacterKey != null) {
+                    JSONReader.overwriteCharacter(currentCharacterKey, name, description, gender);
+                }
 
                 // update current scene
                 ChatBot chatBot = new ChatBot();
@@ -317,7 +344,6 @@ public class ChatBot extends Application {
                 send.fire();
             }
         });
-
         loadCharacters();
 
         splitter.getChildren().addAll(left, right);
@@ -350,6 +376,58 @@ public class ChatBot extends Application {
 
         chat.appendText(currentName.substring(0, 1).toUpperCase() + currentName.substring(1) + ": " + botResponse[0] + "\n");
         chat.appendText("\n");
+
+        // Create JSON to send with POST request
+        JSONObject json = new JSONObject();
+        json.put("speaker_name", "speaker1");
+        json.put("input_text", botResponse[0]);
+        json.put("emotion", "happy");
+        json.put("speed", 1.0);
+
+        // Create HttpClient and HttpRequest for the first request
+        HttpClient client = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .build();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI("http://localhost:8000/generate"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json.toString()))
+                .build();
+
+        // Send the first request asynchronously
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(response -> {
+                    // After the first request has completed, send the second request
+                    // Create the JSON and HttpRequest for the second request here
+                    // Then use client.sendAsync() to send the second request
+                });
+        // Create a WatchService to monitor the desktop directory
+        WatchService watchService = FileSystems.getDefault().newWatchService();
+        Paths.get(System.getProperty("user.home"), "Desktop").register(watchService, StandardWatchEventKinds.ENTRY_CREATE);
+
+        // Start a new thread to monitor the directory
+        new Thread(() -> {
+            try {
+                while (true) {
+                    WatchKey key = watchService.take(); // block until a file is created
+                    for (WatchEvent<?> event : key.pollEvents()) {
+                        if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
+                            // Check if the new file is "bark_out"
+                            if (event.context().toString().equals("bark_out.wav")) {
+                                // Play the audio file
+                                Clip clip = AudioSystem.getClip();
+                                clip.open(AudioSystem.getAudioInputStream(new File(System.getProperty("user.home"), "C://Users//Richard//Desktop")));
+                                clip.start();
+                                return; // exit the loop and end the thread
+                            }
+                        }
+                    }
+                    key.reset(); // reset the key to receive further events
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
 
         scrollPane.setVvalue(1.0);
         chatinput.clear();
