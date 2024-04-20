@@ -24,9 +24,13 @@
 
 <div align="center">
 
-  <img src="https://github.com/ris5266/chatbot/blob/master/preview.mp4" alt="logo" size="20%"/>
+  <img src="https://github.com/ris5266/chatbot/assets/86254687/0ec8c932-3bf5-4a7e-85cd-199af3f93b57" alt="logo" size="20%"/>
   
 </div>
 
 ## Upcoming
+
+
+
+
 
