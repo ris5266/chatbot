@@ -17,7 +17,7 @@ public class OllamaAPI {
     static String[] askOllama(String message, String history, String systemPrompt) throws URISyntaxException, IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
 
-        String model = "llama2";
+        String model = "llama3";
         boolean stream = false;
         String[] antwort = new String[2];
 

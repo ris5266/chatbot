@@ -2,6 +2,7 @@ package com.example.chatbot;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -9,13 +10,15 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import org.json.JSONObject;
 
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Clip;
+import javax.sound.sampled.*;
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 
 public class ChatBot extends Application {
@@ -63,7 +66,7 @@ public class ChatBot extends Application {
 
             characterButton.setOnMouseEntered(e -> {
                 if (characterButton == currentCharacterButton) {
-                    characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: orange;");
+                    characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: lightblue;");
                 } else {
                     characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5;");
                 }
@@ -71,7 +74,7 @@ public class ChatBot extends Application {
 
             characterButton.setOnMouseExited(e -> {
                 if (characterButton == currentCharacterButton) {
-                    characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: orange;");
+                    characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: lightblue;");
                 } else {
                     characterButton.setStyle("-fx-background-color: #1d1d1d;");
                 }
@@ -82,6 +85,7 @@ public class ChatBot extends Application {
                 conversationHistory = "";
                 systemPrompt = "You are " + name + ". " + character.getString("description");
                 currentDescription = character.getString("description");
+                currentGender = character.getString("gender");
                 currentName = name;
 
                 // Change the text color of the previously selected button back to its original color
@@ -90,7 +94,7 @@ public class ChatBot extends Application {
                 }
 
                 // Change the text color of the newly selected button to red
-                characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: orange;");
+                characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: lightblue;");
                 currentCharacterButton = characterButton;
 
             });
@@ -116,7 +120,7 @@ public class ChatBot extends Application {
             charactervbox.getChildren().add(characterButton);
 
             if (isFirstCharacter) {
-                characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: orange;");
+                characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: lightblue;");
                 currentCharacterButton = characterButton;
                 isFirstCharacter = false;
             }
@@ -156,8 +160,10 @@ public class ChatBot extends Application {
 
             // input & submit
             Label nameLabel = new Label("Character name:");
+
             TextField nameField = new TextField();
             Label descriptionLabel = new Label("Character description:");
+
             TextArea descriptionField = new TextArea();
 
             RadioButton femaleButton = new RadioButton("Female");
@@ -166,7 +172,15 @@ public class ChatBot extends Application {
             femaleButton.setToggleGroup(genderGroup);
             maleButton.setToggleGroup(genderGroup);
 
+            Label submitLabel = new Label("Character Gender:");
+
             Button submitButton = new Button("Submit");
+            submitButton.setStyle("-fx-background-color: black; -fx-text-fill: white;");
+
+            FlowPane submitPane = new FlowPane();
+            submitPane.setPadding(new Insets(0, 0, 5, 0));
+            submitPane.getChildren().add(submitButton);
+            submitPane.setAlignment(Pos.CENTER);
 
             // submit action
             submitButton.setOnAction(event -> {
@@ -186,8 +200,10 @@ public class ChatBot extends Application {
                 newCharacterStage.close();
             });
 
-            VBox formLayout = new VBox(10, nameLabel, nameField, descriptionLabel, descriptionField, femaleButton, maleButton, submitButton);
+            VBox formLayout = new VBox(10, nameLabel, nameField, descriptionLabel, descriptionField, submitLabel, femaleButton, maleButton, submitPane);
             formLayout.setPadding(new Insets(10));
+            formLayout.setStyle("-fx-background-color: white;");
+
 
             newCharacterStage.setScene(new Scene(formLayout));
             newCharacterStage.setResizable(false);
@@ -298,8 +314,12 @@ public class ChatBot extends Application {
             } else if ("Male".equals(currentGender)) {
                 maleButton.setSelected(true);
             }
+            Label submitLabel = new Label("Character Gender:");
 
             Button submitButton = new Button("Submit");
+
+            submitButton.setStyle("-fx-background-color: black; -fx-text-fill: white;");
+
 
             // submit action
             submitButton.setOnAction(event -> {
@@ -330,9 +350,14 @@ public class ChatBot extends Application {
                 }
                 editCharacterStage.close();
             });
+            FlowPane submitPane = new FlowPane();
+            submitPane.setPadding(new Insets(0, 0, 5, 0));
+            submitPane.getChildren().add(submitButton);
+            submitPane.setAlignment(Pos.CENTER);
 
-            VBox formLayout = new VBox(10, nameLabel, nameField, descriptionLabel, descriptionField, femaleButton, maleButton, submitButton);
+            VBox formLayout = new VBox(10, nameLabel, nameField, descriptionLabel, descriptionField, submitLabel, femaleButton, maleButton, submitPane);
             formLayout.setPadding(new Insets(10));
+            formLayout.setStyle("-fx-background-color: white;");
 
             editCharacterStage.setScene(new Scene(formLayout));
             editCharacterStage.setResizable(false);
@@ -369,69 +394,47 @@ public class ChatBot extends Application {
 
         // get chatbot response and add it to history
         String[] botResponse = OllamaAPI.askOllama(userMessage, conversationHistory, systemPrompt);
-        conversationHistory += ". ChatBot: " + botResponse[0];
-        if (botResponse[0] == null) {
+        if (botResponse[0] != null) {
+            conversationHistory += ". ChatBot: " + botResponse[0];
+
+            chat.appendText(currentName.substring(0, 1).toUpperCase() + currentName.substring(1) + ": " + botResponse[0] + "\n");
+            chat.appendText("\n");
+
+            String text = URLEncoder.encode(botResponse[0], StandardCharsets.UTF_8);
+            String speaker = "en_1";
+
+            if (currentGender.equals("Female")) {
+                speaker = "en_0";
+            } else {
+                speaker = "en_1";
+            }
+
+            HttpClient client = HttpClient.newHttpClient();
+            String url = "http://localhost:8000/generate?text=" + text + "&speaker=" + speaker;
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .build();
+
+            Path outputPath = Paths.get("response.wav");
+            HttpResponse<Path> response = client.send(request, HttpResponse.BodyHandlers.ofFile(outputPath));
+
+            // play audio in a new thread so that the responds can we shown in the chat while the audio is playing
+            new Thread(() -> {
+                try (AudioInputStream audioIn = AudioSystem.getAudioInputStream(outputPath.toFile())) {
+                    Clip clip = AudioSystem.getClip();
+                    clip.open(audioIn);
+                    clip.start();
+                    Thread.sleep(clip.getMicrosecondLength() / 1000);
+                } catch (UnsupportedAudioFileException | LineUnavailableException | InterruptedException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }).start();
+        } else {
             conversationHistory = "";
         }
-
-        chat.appendText(currentName.substring(0, 1).toUpperCase() + currentName.substring(1) + ": " + botResponse[0] + "\n");
-        chat.appendText("\n");
-
-        // Create JSON to send with POST request
-        JSONObject json = new JSONObject();
-        json.put("speaker_name", "speaker1");
-        json.put("input_text", botResponse[0]);
-        json.put("emotion", "happy");
-        json.put("speed", 1.0);
-
-        // Create HttpClient and HttpRequest for the first request
-        HttpClient client = HttpClient.newBuilder()
-                .followRedirects(HttpClient.Redirect.ALWAYS)
-                .build();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(new URI("http://localhost:8000/generate"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json.toString()))
-                .build();
-
-        // Send the first request asynchronously
-        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenAccept(response -> {
-                    // After the first request has completed, send the second request
-                    // Create the JSON and HttpRequest for the second request here
-                    // Then use client.sendAsync() to send the second request
-                });
-        // Create a WatchService to monitor the desktop directory
-        WatchService watchService = FileSystems.getDefault().newWatchService();
-        Paths.get(System.getProperty("user.home"), "Desktop").register(watchService, StandardWatchEventKinds.ENTRY_CREATE);
-
-        // Start a new thread to monitor the directory
-        new Thread(() -> {
-            try {
-                while (true) {
-                    WatchKey key = watchService.take(); // block until a file is created
-                    for (WatchEvent<?> event : key.pollEvents()) {
-                        if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
-                            // Check if the new file is "bark_out"
-                            if (event.context().toString().equals("bark_out.wav")) {
-                                // Play the audio file
-                                Clip clip = AudioSystem.getClip();
-                                clip.open(AudioSystem.getAudioInputStream(new File(System.getProperty("user.home"), "C://Users//Richard//Desktop")));
-                                clip.start();
-                                return; // exit the loop and end the thread
-                            }
-                        }
-                    }
-                    key.reset(); // reset the key to receive further events
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }).start();
-
         scrollPane.setVvalue(1.0);
         chatinput.clear();
     }
 }
-
-

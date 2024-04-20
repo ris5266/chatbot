@@ -3,11 +3,13 @@ package com.example.chatbot;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -26,12 +28,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class BootupScene extends Application {
-    private List<String> characterInformation;
-    // components
     private Button submit;
     private GridPane pane;
-    private Text question;
-    private TextField textfield;
+    private Text downloadLabel;
     private VBox vbox;
     private GridPane grid;
     private VBox submitVbox;
@@ -39,143 +38,151 @@ public class BootupScene extends Application {
     private Scene scene;
     private Image icon;
     private ImageView iconView;
-    private ProgressBar progressBar;
-    private int counter = 0;
+    private String name;
+    private String description;
 
     public static void main(String[] args) {
         launch(args);
     }
 
+
     @Override
-    public void start(Stage primaryStage) throws InterruptedException {
-        pane = new GridPane();
-        vbox = new VBox();
-        mainVbox = new VBox();
-        submitVbox = new VBox();
-        textfield = new TextField();
+    public void start(Stage primaryStage) throws Exception {
+        File configFile = new File("config.json");
+        if (configFile.exists() && !configFile.isDirectory()) {
+            // If config.json exists, start the ChatBot scene
+            ChatBot chatBot = new ChatBot();
+            chatBot.start(primaryStage);
+        } else {
 
-        grid = new GridPane();
-        submit = new Button("Submit");
-        icon = new Image("bootup.jpeg");
-        iconView = new ImageView(icon);
-        question = new Text("What is the name of your chat partner?");
-        characterInformation = new ArrayList<>();
-        // styling
-        iconView.setFitHeight(300);
-        iconView.setFitWidth(300);
-        pane.setAlignment(Pos.CENTER);
+            vbox = new VBox();
+            mainVbox = new VBox();
+            submitVbox = new VBox();
 
+            submit = new Button("I already installed everything. Continue.");
+            icon = new Image("bootup.jpg");
+            iconView = new ImageView(icon);
+            downloadLabel = new Text("Welcome! Before you can start chatting, you need to have \n followed the install instructions from the READ.ME file. ");
+            downloadLabel.setStyle("-fx-fill: #e5e5e5;");
+            TextField textfield = new TextField();
+            textfield.setPrefWidth(200);
+            HBox hbox = new HBox();
+            hbox.setAlignment(Pos.CENTER);
 
-        RadioButton female = new RadioButton();
-        female.setText("Female");
-        RadioButton male = new RadioButton();
-        male.setText("Male");
-        female.setTextAlignment(TextAlignment.CENTER);
-        male.setTextAlignment(TextAlignment.CENTER);
-        progressBar = new ProgressBar();
+            ProgressBar progressBar = new ProgressBar();
+            Button nameSubmit = new Button("Submit");
+            hbox.getChildren().addAll(textfield, nameSubmit);
+            hbox.setSpacing(10);
+            nameSubmit.setStyle("-fx-background-color: white");
+            submit.setStyle("-fx-background-color: white");
+            Button descriptionSubmit = new Button("Submit");
+            descriptionSubmit.setStyle("-fx-background-color: white");
 
-        female.setOnAction(e -> {
-            male.setSelected(false);
-            submit.setDisable(false);
+            RadioButton femaleButton = new RadioButton("Female");
+            femaleButton.setStyle("-fx-text-fill: #e5e5e5");
+            RadioButton maleButton = new RadioButton("Male");
+            maleButton.setStyle("-fx-text-fill: #e5e5e5");
+            ToggleGroup genderGroup = new ToggleGroup();
+            femaleButton.setToggleGroup(genderGroup);
+            maleButton.setToggleGroup(genderGroup);
 
-        });
+            Button finishCharacter = new Button("Create Character");
+            finishCharacter.setStyle("-fx-background-color: white");
 
-        male.setOnAction(e -> {
-            female.setSelected(false);
-            submit.setDisable(false);
-        });
+            finishCharacter.setOnAction(e -> {
+                if (genderGroup.getSelectedToggle() != null) {
+                    String gender = ((RadioButton) genderGroup.getSelectedToggle()).getText();
+                    hbox.getChildren().remove(femaleButton);
+                    hbox.getChildren().remove(maleButton);
+                    hbox.getChildren().remove(finishCharacter);
+                    hbox.getChildren().add(progressBar);
+                    downloadLabel.setText("Hold on, your character is being created...");
+                    JSONReader.createCharacter(name, description, gender);
+                    new Thread(() -> {
+                        try {
+                            // Sleep for 5 seconds
+                            Thread.sleep(6000);
 
-        // disable submit button
-        submit.setDisable(true);
-
-        textfield.setOnKeyReleased(e -> {
-            if (textfield.getText().isEmpty()) {
-                submit.setDisable(true);
-            } else {
-                submit.setDisable(false);
-            }
-        });
-        submit.setOnAction(e -> {
-            if (counter == 0) {
-                characterInformation.add(textfield.getText());
-                question.setText("How would you describe your chat partner?");
-                textfield.clear();
-                submit.setDisable(true);
-
-                counter++;
-            } else if (counter == 1) {
-                characterInformation.add(textfield.getText());
-                textfield.clear();
-                submit.setDisable(true);
-
-                question.setText("Is your chat partner a female or male?");
-                vbox.getChildren().addAll(female, male);
-                grid.getChildren().removeIf(node -> textfield.equals(node));
-                counter++;
-            } else if (counter == 2) {
-                submit.setDisable(true);
-
-                characterInformation.add(textfield.getText());
-                if (female.isSelected()) {
-                    characterInformation.add("Female");
-                } else {
-                    characterInformation.add("Male");
+                            // Update the UI on the JavaFX Application Thread
+                            Platform.runLater(() -> {
+                                ChatBot chatBot = new ChatBot();
+                                try {
+                                    chatBot.start(new Stage());
+                                } catch (Exception ex) {
+                                    ex.printStackTrace();
+                                }
+                            });
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                        }
+                    }).start();
                 }
+            });
 
-                submit.setVisible(false);
-                question.setText("Thank you, your chat partner is being created...");
-                vbox.getChildren().add(progressBar);
-                female.setVisible(false);
-                male.setVisible(false);
+            descriptionSubmit.setOnAction(e -> {
+                description = textfield.getText();
+                downloadLabel.setText("Very good! Would you consider " + name.substring(0, 1).toUpperCase() + name.substring(1) + " a male or a female?");
+                hbox.getChildren().remove(descriptionSubmit);
+                hbox.getChildren().remove(textfield);
+
+                hbox.getChildren().addAll(femaleButton, maleButton);
+                hbox.getChildren().add(finishCharacter);
+            });
+
+            nameSubmit.setOnAction(e -> {
+                name = textfield.getText();
+                downloadLabel.setText("Great name! How would " + name.substring(0, 1).toUpperCase() + name.substring(1) + " personality look like?");
+                textfield.clear();
+                hbox.getChildren().remove(nameSubmit);
+                hbox.getChildren().add(descriptionSubmit);
+            });
+
+            submit.setOnAction(e -> {
+                mainVbox.getChildren().remove(submitVbox);
+                mainVbox.getChildren().add(progressBar);
+                downloadLabel.setText("Great! Lets continue to creating your first chatbot...");
 
                 new Thread(() -> {
                     try {
-                        TimeUnit.SECONDS.sleep(8);
+                        Thread.sleep(6000);
+                        Platform.runLater(() -> {
+                            downloadLabel.setText("What do you want to name your new chatbot?");
+                            mainVbox.getChildren().remove(progressBar);
+                            mainVbox.getChildren().add(hbox);
+                        });
                     } catch (InterruptedException ex) {
-                        throw new RuntimeException(ex);
+                        ex.printStackTrace();
                     }
-
-                    Platform.runLater(() -> {
-                        ChatBot chatBot = new ChatBot();
-                        try {
-                            chatBot.start(primaryStage);
-                        } catch (Exception ex) {
-                            throw new RuntimeException(ex);
-                        }
-                    });
                 }).start();
-            }
-        });
+            });
 
-        // field + button
-        grid.add(textfield, 0, 0);
-        grid.setAlignment(Pos.CENTER);
+            // styling
+            iconView.setFitHeight(300);
+            iconView.setFitWidth(300);
 
-        // submit button
-        submitVbox.getChildren().add(submit);
-        submitVbox.setAlignment(Pos.CENTER);
+            // submit button
+            submitVbox.getChildren().add(submit);
+            submitVbox.setAlignment(Pos.CENTER);
 
-        // combine layouts
-        vbox.getChildren().addAll(iconView, question);
-        vbox.setAlignment(Pos.CENTER);
-        vbox.setSpacing(3);
+            // combine layouts
+            vbox.getChildren().addAll(iconView, downloadLabel);
+            vbox.setAlignment(Pos.CENTER);
+            vbox.setSpacing(5);
 
-        pane.add(vbox, 0, 0);
-        pane.add(grid, 0, 1);
-        pane.add(submitVbox, 0, 5);
-        pane.setVgap(15);
-        mainVbox.getChildren().addAll(pane, submitVbox);
-        mainVbox.setSpacing(30);
-        mainVbox.setAlignment(Pos.CENTER);
+            vbox.setStyle("-fx-background-color: #121212");
+            mainVbox.getChildren().addAll(vbox, submitVbox);
+            mainVbox.setSpacing(30);
+            mainVbox.setAlignment(Pos.CENTER);
 
-        scene = new Scene(mainVbox, 800, 600);
-        pane.setStyle("-fx-background-color: #eeeff1");
-        vbox.setStyle("-fx-background-color: #eeeff1");
-        mainVbox.setStyle("-fx-background-color: #eeeff1");
+            mainVbox.setStyle("-fx-background-color: #121212");
 
-        primaryStage.setTitle("Chatbot");
-        primaryStage.getIcons().add(new Image("bootup.jpeg"));
-        primaryStage.setScene(scene);
-        primaryStage.show();
+            scene = new Scene(mainVbox, 800, 600);
+
+            primaryStage.setTitle("Chatbot");
+            primaryStage.getIcons().add(new Image("bootup.jpg"));
+            primaryStage.setScene(scene);
+            primaryStage.show();
+        }
+
     }
 }
