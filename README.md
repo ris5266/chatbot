@@ -5,7 +5,7 @@
 # Customizable Text-To-Speech Chatbot
 </div>
 
-### A fast customizable Text-To-Speech Chatbot built using Java, JavaFX, [Ollama API](https://github.com/ollama/ollama) and [Silero-TTS](https://github.com/twirapp/silero-tts-api-server)
+### A customizable Text-To-Speech Chatbot built using Java, JavaFX, [Ollama API](https://github.com/ollama/ollama) and [Silero-TTS](https://github.com/twirapp/silero-tts-api-server)
 
 > still under development
 
