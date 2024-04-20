@@ -24,7 +24,7 @@
 
 <div align="center">
 
-  <img src="" alt="logo" size="20%"/>
+  <img src="https://github.com/ris5266/chatbot/blob/master/preview.mp4" alt="logo" size="20%"/>
   
 </div>
 
