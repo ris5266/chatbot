@@ -28,7 +28,7 @@
 
 🔊 **Text-to-Speech**: The Silero-TTS-Api-Server ensures that bot responses are spoken in accordance with the character's gender
 
-<div align="center">
+<div align="center" display:none>
 
  https://github.com/ris5266/chatbot/assets/86254687/0ec8c932-3bf5-4a7e-85cd-199af3f93b57
   
