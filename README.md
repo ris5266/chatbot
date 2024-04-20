@@ -44,15 +44,15 @@ git clone https://github.com/ris5266/chatbot.git
 
 2. Install [OllamaAPI](https://github.com/ollama/ollama) using Docker
    
-  Run in CPU:
-  ```
-  docker run -it -v ~/ollama:/root/.ollama -p 11434:11434 ollama/ollama
-  ```
+        Run in CPU:
+        ```
+        docker run -it -v ~/ollama:/root/.ollama -p 11434:11434 ollama/ollama
+        ```
 
-  Run in GPU:
-  ```
-  docker run -it --gpus=all -v ~/ollama:/root/.ollama -p 11434:11434 ollama/ollama
-  ```
+        Run in GPU:
+        ```
+        docker run -it --gpus=all -v ~/ollama:/root/.ollama -p 11434:11434 ollama/ollama
+        ```
 
 
 3. Download your desired [chat model](https://ollama.com/library)
