@@ -22,11 +22,11 @@
 
 
 
-<div align="center">
+
 
  https://github.com/ris5266/chatbot/assets/86254687/0ec8c932-3bf5-4a7e-85cd-199af3f93b57
   
-</div>
+
 
 ## Upcoming
 
