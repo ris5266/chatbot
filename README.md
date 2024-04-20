@@ -41,28 +41,32 @@
 git clone https://github.com/ris5266/chatbot.git
 ```
 
-3. Install [OllamaAPI](https://github.com/ollama/ollama) using Docker
-Run in CPU:
-```
-docker run -it -v ~/ollama:/root/.ollama -p 11434:11434 ollama/ollama
-```
-Run in GPU:
-```
-docker run -it --gpus=all -v ~/ollama:/root/.ollama -p 11434:11434 ollama/ollama
-```
 
-5. Download your desired [chat model](https://ollama.com/library)
+2. Install [OllamaAPI](https://github.com/ollama/ollama) using Docker
+  Run in CPU:
+  ```
+  docker run -it -v ~/ollama:/root/.ollama -p 11434:11434 ollama/ollama
+  ```
+  Run in GPU:
+  ```
+  docker run -it --gpus=all -v ~/ollama:/root/.ollama -p 11434:11434 ollama/ollama
+  ```
+
+
+3. Download your desired [chat model](https://ollama.com/library)
 For example:
 ```
 ollama run llama3
 ```
 
-7. Install [Silero-TTS-Api-Server](https://github.com/twirapp/silero-tts-api-server) using Docker
+
+4. Install [Silero-TTS-Api-Server](https://github.com/twirapp/silero-tts-api-server) using Docker
 ```
 docker run --rm -p 8000:8000 twirapp/silero-tts-api-server
 ```
 
-9. Run the software
+
+5. Run the software
 
 ## Upcoming
 - save & request previous chat from database
