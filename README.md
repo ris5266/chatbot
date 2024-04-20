@@ -2,7 +2,7 @@
 
   <img src="https://github.com/ris5266/chatbot/blob/master/src/main/resources/icon.jpeg" alt="logo" width="500px" height="500px"/>
   
-# Customizable Chatbot
+# Customizable Text-To-Speech Chatbot
 </div>
 
 ### A customizable Text-To-Speech Chatbot built using Java, JavaFX, [Ollama API](https://github.com/ollama/ollama) and [Silero-TTS](https://github.com/twirapp/silero-tts-api-server)
