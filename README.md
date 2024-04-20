@@ -76,6 +76,7 @@ docker run --rm -p 8000:8000 twirapp/silero-tts-api-server
 ## Upcoming
 - save & request previous chat from database
 - upload custom voice models (for example [rvc v2](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI/tree/main) models)
+- change language
 - ... and more!
 
 
