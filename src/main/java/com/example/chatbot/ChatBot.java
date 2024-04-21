@@ -1,17 +1,20 @@
 package com.example.chatbot;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 import org.json.JSONObject;
 
 import javax.sound.sampled.*;
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -25,13 +28,14 @@ public class ChatBot extends Application {
     private String currentName;
     private String currentDescription;
     private String currentGender;
-    private TextArea chat;
+    private TextFlow chat;
     private TextField chatinput;
     private ScrollPane scrollPane;
     private String conversationHistory;
     private String systemPrompt;
     private VBox charactervbox;
     private Button currentCharacterButton = null;
+    private String currentModel;
 
     public static void main(String[] args) {
         launch(args);
@@ -40,14 +44,13 @@ public class ChatBot extends Application {
     public ChatBot() {
         JSONObject characters = JSONReader.readCharacters();
 
-        // Get the first character from the characters object
+        // select the first character
         String firstKey = characters.keys().next();
         JSONObject firstCharacter = characters.getJSONObject(firstKey);
-
-        // Get the name and description of the first character
         currentName = firstCharacter.getString("name");
         currentDescription = firstCharacter.getString("description");
         currentGender = firstCharacter.getString("gender");
+        currentModel = "llama3";
     }
 
     private void loadCharacters() {
@@ -81,23 +84,26 @@ public class ChatBot extends Application {
             });
 
             characterButton.setOnAction(e -> {
-                chat.clear();
+                chat.getChildren().clear();
                 conversationHistory = "";
                 systemPrompt = "You are " + name + ". " + character.getString("description");
                 currentDescription = character.getString("description");
                 currentGender = character.getString("gender");
                 currentName = name;
 
-                // Change the text color of the previously selected button back to its original color
+                // changes font color to the one who is currently selected
                 if (currentCharacterButton != null) {
                     currentCharacterButton.setStyle("-fx-background-color: #1d1d1d;");
                 }
-
-                // Change the text color of the newly selected button to red
                 characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: lightblue;");
                 currentCharacterButton = characterButton;
-
             });
+
+            if (isFirstCharacter) {
+                characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: lightblue;");
+                currentCharacterButton = characterButton;
+                isFirstCharacter = false;
+            }
 
             // delete character on right-click
             ContextMenu contextMenu = new ContextMenu();
@@ -111,38 +117,53 @@ public class ChatBot extends Application {
                     throw new RuntimeException(ex);
                 }
             });
-            contextMenu.getItems().add(deleteItem);
 
-            // Show the context menu when the character button is right-clicked
+            contextMenu.getItems().add(deleteItem);
             characterButton.setOnContextMenuRequested(e -> {
                 contextMenu.show(characterButton, e.getScreenX(), e.getScreenY());
             });
             charactervbox.getChildren().add(characterButton);
-
-            if (isFirstCharacter) {
-                characterButton.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: lightblue;");
-                currentCharacterButton = characterButton;
-                isFirstCharacter = false;
-            }
         }
     }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        // splitting the scene in two parts
         HBox splitter = new HBox();
         splitter.setStyle("-fx-background-color: #121212;");
         splitter.setPrefHeight(750);
         splitter.setPrefWidth(1000);
         splitter.setSpacing(20);
+
+        // left side for the characters, settings and model
         VBox left = new VBox();
         left.setStyle("-fx-background-color:  #1d1d1d;");
         left.setPrefHeight(571);
         left.setPrefWidth(107);
         left.setPadding(new Insets(10, 10, 10, 10));
 
+        // textfield for changing the model
         FlowPane placeholder = new FlowPane();
         placeholder.setPrefHeight(510);
         placeholder.setPrefWidth(107);
+
+        TextField placeholderField = new TextField();
+        placeholderField.setText(currentModel);
+        placeholderField.setPrefWidth(85);
+        placeholder.setAlignment(Pos.TOP_CENTER);
+        Button placeholderButton = new Button("+");
+
+        HBox hboxmodel = new HBox();
+        hboxmodel.setAlignment(Pos.CENTER);
+        hboxmodel.getChildren().addAll(placeholderField, placeholderButton);
+
+        placeholderButton.setOnAction(e -> {
+            currentModel = placeholderField.getText();
+        });
+
+        placeholder.getChildren().addAll(hboxmodel);
+
+        // characters
         left.getChildren().add(placeholder);
         charactervbox = new VBox();
         charactervbox.setPrefHeight(742);
@@ -151,6 +172,8 @@ public class ChatBot extends Application {
         newCharacter.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5");
         newCharacter.setPrefHeight(33);
         newCharacter.setPrefWidth(107);
+
+        // modal window to create a new character
         newCharacter.setOnAction(e -> {
             Stage newCharacterStage = new Stage();
             newCharacterStage.setTitle("Create Character");
@@ -158,22 +181,16 @@ public class ChatBot extends Application {
             newCharacterStage.initOwner(primaryStage);
             newCharacterStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
 
-            // input & submit
             Label nameLabel = new Label("Character name:");
-
             TextField nameField = new TextField();
             Label descriptionLabel = new Label("Character description:");
-
             TextArea descriptionField = new TextArea();
-
             RadioButton femaleButton = new RadioButton("Female");
             RadioButton maleButton = new RadioButton("Male");
+            Label submitLabel = new Label("Character Gender:");
             ToggleGroup genderGroup = new ToggleGroup();
             femaleButton.setToggleGroup(genderGroup);
             maleButton.setToggleGroup(genderGroup);
-
-            Label submitLabel = new Label("Character Gender:");
-
             Button submitButton = new Button("Submit");
             submitButton.setStyle("-fx-background-color: black; -fx-text-fill: white;");
 
@@ -182,15 +199,14 @@ public class ChatBot extends Application {
             submitPane.getChildren().add(submitButton);
             submitPane.setAlignment(Pos.CENTER);
 
-            // submit action
+            // add character to config.json and reload scene to show the character in the list
             submitButton.setOnAction(event -> {
                 String name = nameField.getText();
                 String description = descriptionField.getText();
                 String gender = ((RadioButton) genderGroup.getSelectedToggle()).getText();
-
                 JSONReader.createCharacter(name, description, gender);
 
-                // update current scene
+                // reload current scene
                 ChatBot chatBot = new ChatBot();
                 try {
                     chatBot.start(primaryStage);
@@ -204,13 +220,13 @@ public class ChatBot extends Application {
             formLayout.setPadding(new Insets(10));
             formLayout.setStyle("-fx-background-color: white;");
 
-
             newCharacterStage.setScene(new Scene(formLayout));
             newCharacterStage.setResizable(false);
             newCharacterStage.show();
         });
-
         charactervbox.getChildren().addAll(newCharacter);
+
+        // settings
         FlowPane settingspane = new FlowPane();
         settingspane.setPadding(new Insets(0, 0, 5, 0));
         Button settings = new Button("Edit Character");
@@ -220,62 +236,7 @@ public class ChatBot extends Application {
         settings.setPrefWidth(107);
         left.getChildren().addAll(charactervbox, settingspane);
 
-        VBox right = new VBox();
-        right.setPrefHeight(689);
-        right.setPrefWidth(855);
-
-        chat = new TextArea();
-        chat.setPrefHeight(794);
-        chat.setPrefWidth(855);
-        chat.setWrapText(true);
-        chat.setEditable(false);
-        chat.setStyle("-fx-font-size: 15px; -fx-font-family: 'Arial'");
-
-        scrollPane = new ScrollPane(chat);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setVvalue(1.0);
-
-        VBox container = new VBox(chat);
-        VBox.setMargin(chat, new Insets(20, 50, 20, 0)); // top, right, bottom, left margins
-
-        HBox chatinputbox = new HBox();
-        chatinputbox.setSpacing(10);
-        chatinputbox.setPadding(new Insets(5, 5, 10, 5));
-        chatinputbox.setPrefHeight(35);
-        chatinputbox.setPrefWidth(895);
-
-        chatinput = new TextField();
-        chatinput.setPrefHeight(31);
-        chatinput.setPrefWidth(788);
-        Button send = new Button("Send");
-        send.setPrefHeight(38);
-        send.setPrefWidth(105);
-
-        send.setDisable(true);
-
-        send.setStyle("-fx-background-color: white;");
-        chatinputbox.getChildren().addAll(chatinput, send);
-        right.getChildren().addAll(container, chatinputbox);
-
-        chatinput.setOnKeyReleased(e -> {
-            if (chatinput.getText().isEmpty()) {
-                send.setDisable(true);
-            } else {
-                send.setDisable(false);
-            }
-        });
-
-        send.setOnAction(e -> {
-            System.out.println("hi");
-            if (!chatinput.getText().isEmpty()) {
-                try {
-                    sendMessage();
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
-                }
-            }
-        });
-
+        // styling
         settings.setOnMouseEntered(e -> {
             settings.setStyle("-fx-border-color: white; -fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5;");
         });
@@ -290,7 +251,7 @@ public class ChatBot extends Application {
             newCharacter.setStyle("-fx-background-color: #1d1d1d; -fx-text-fill: #e5e5e5;");
         });
 
-
+        // settings modal window to change information about the current character
         settings.setOnAction(e -> {
             Stage editCharacterStage = new Stage();
             editCharacterStage.setTitle("Edit Character");
@@ -298,7 +259,6 @@ public class ChatBot extends Application {
             editCharacterStage.initOwner(primaryStage);
             editCharacterStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
 
-            // input & submit
             Label nameLabel = new Label("Character name:");
             TextField nameField = new TextField(currentName);
             Label descriptionLabel = new Label("Character description:");
@@ -320,8 +280,7 @@ public class ChatBot extends Application {
 
             submitButton.setStyle("-fx-background-color: black; -fx-text-fill: white;");
 
-
-            // submit action
+            // get all the information and overwrite the current character
             submitButton.setOnAction(event -> {
                 String name = nameField.getText();
                 String description = descriptionField.getText();
@@ -341,7 +300,7 @@ public class ChatBot extends Application {
                     JSONReader.overwriteCharacter(currentCharacterKey, name, description, gender);
                 }
 
-                // update current scene
+                // reload current scene
                 ChatBot chatBot = new ChatBot();
                 try {
                     chatBot.start(primaryStage);
@@ -351,6 +310,7 @@ public class ChatBot extends Application {
                 editCharacterStage.close();
             });
             FlowPane submitPane = new FlowPane();
+
             submitPane.setPadding(new Insets(0, 0, 5, 0));
             submitPane.getChildren().add(submitButton);
             submitPane.setAlignment(Pos.CENTER);
@@ -364,6 +324,69 @@ public class ChatBot extends Application {
             editCharacterStage.show();
         });
 
+        // right side for the chat and textfield
+        VBox right = new VBox();
+        right.setPrefHeight(689);
+        right.setPrefWidth(855);
+
+        chat = new TextFlow();
+        chat.setPrefHeight(794);
+        chat.setPrefWidth(855);
+        chat.setStyle("-fx-font-size: 15px; -fx-font-family: 'Arial'");
+
+        // add a scrollpane to be able to scroll in the chat
+        scrollPane = new ScrollPane(chat);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setVvalue(1.0);
+        scrollPane.setStyle("-fx-background: #121212; -fx-border-color: #121212; -fx-background-color: transparent");
+        scrollPane.setPadding(new Insets(10, 10, 10, 10));
+
+        VBox container = new VBox(chat);
+        container.getChildren().add(scrollPane);
+        VBox.setMargin(chat, new Insets(20, 50, 20, 0));
+
+        // textfield and button to send messages
+        HBox chatinputbox = new HBox();
+        chatinputbox.setSpacing(10);
+        chatinputbox.setPadding(new Insets(5, 5, 10, 5));
+        chatinputbox.setPrefHeight(35);
+        chatinputbox.setPrefWidth(895);
+
+        chatinput = new TextField();
+        chatinput.setPrefHeight(31);
+        chatinput.setPrefWidth(788);
+        // preselect the textfield
+        Platform.runLater(() -> chatinput.requestFocus());
+
+        Button send = new Button("Send");
+        send.setPrefHeight(38);
+        send.setPrefWidth(105);
+        send.setDisable(true);
+        send.setStyle("-fx-background-color: white;");
+
+        chatinputbox.getChildren().addAll(chatinput, send);
+        right.getChildren().addAll(container, chatinputbox);
+
+        // prevent the user from sending an empty message
+        chatinput.setOnKeyReleased(e -> {
+            if (chatinput.getText().isEmpty()) {
+                send.setDisable(true);
+            } else {
+                send.setDisable(false);
+            }
+        });
+
+        send.setOnAction(e -> {
+            if (!chatinput.getText().isEmpty()) {
+                try {
+                    sendMessage();
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
+
         chatinput.setOnAction(e -> {
             if (!chatinput.getText().isEmpty()) {
                 send.fire();
@@ -373,36 +396,47 @@ public class ChatBot extends Application {
 
         splitter.getChildren().addAll(left, right);
         Scene scene = new Scene(splitter, 1000, 750);
-        primaryStage.setTitle("ChatBot");
+        primaryStage.setTitle("Chatbot");
         primaryStage.setResizable(false);
         primaryStage.getIcons().add(new Image("icon.jpeg"));
-
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
     private void sendMessage() throws Exception {
-        JSONObject characters = JSONReader.readCharacters();
         String userMessage = chatinput.getText();
-
-        systemPrompt = "You are " + currentName + ". " + currentDescription;
+        systemPrompt = "You are " + currentName + ". " + currentDescription; // describes the character behavior
 
         // add user message to history
         conversationHistory += ". User: " + userMessage;
 
-        chat.appendText("You: " + userMessage + "\n");
+        Text userPrompt = new Text("You: ");
+        userPrompt.setFill(Color.rgb(230, 214, 173));
+
+        Text userMessageText = new Text(userMessage + "\n");
+        userMessageText.setFill(Color.WHITE);
+
+        chat.getChildren().addAll(userPrompt, userMessageText);
 
         // get chatbot response and add it to history
-        String[] botResponse = OllamaAPI.askOllama(userMessage, conversationHistory, systemPrompt);
+        String[] botResponse = OllamaAPI.askOllama(currentModel, userMessage, conversationHistory, systemPrompt);
         if (botResponse[0] != null) {
             conversationHistory += ". ChatBot: " + botResponse[0];
 
-            chat.appendText(currentName.substring(0, 1).toUpperCase() + currentName.substring(1) + ": " + botResponse[0] + "\n");
-            chat.appendText("\n");
+            Text botPrompt = new Text(currentName.substring(0, 1).toUpperCase() + currentName.substring(1) + ": ");
+            botPrompt.setFill(Color.rgb(173, 216, 230));
 
+            Text botResponseText = new Text(botResponse[0] + "\n");
+            botResponseText.setFill(Color.WHITE);
+
+            chat.getChildren().addAll(botPrompt, botResponseText);
+            chat.getChildren().add(new Text("\n"));
+
+            // get audio response from chatbot through query string
             String text = URLEncoder.encode(botResponse[0], StandardCharsets.UTF_8);
-            String speaker = "en_1";
+            String speaker = "";
 
+            // select voice depending on the gender
             if (currentGender.equals("Female")) {
                 speaker = "en_0";
             } else {
@@ -418,7 +452,7 @@ public class ChatBot extends Application {
             Path outputPath = Paths.get("response.wav");
             HttpResponse<Path> response = client.send(request, HttpResponse.BodyHandlers.ofFile(outputPath));
 
-            // play audio in a new thread so that the responds can we shown in the chat while the audio is playing
+            // play audio in a new thread so that the answer can be shown in the chat while the audio is playing
             new Thread(() -> {
                 try (AudioInputStream audioIn = AudioSystem.getAudioInputStream(outputPath.toFile())) {
                     Clip clip = AudioSystem.getClip();
@@ -431,6 +465,7 @@ public class ChatBot extends Application {
                     throw new RuntimeException(e);
                 }
             }).start();
+            Platform.runLater(() -> scrollPane.setVvalue(1.0));
         } else {
             conversationHistory = "";
         }

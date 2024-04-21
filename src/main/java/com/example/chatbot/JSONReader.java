@@ -5,6 +5,7 @@ import org.json.JSONObject;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 
 public class JSONReader {
@@ -40,6 +41,15 @@ public class JSONReader {
         JSONObject config;
         try {
             config = new JSONObject(new String(Files.readAllBytes(Paths.get("config.json"))));
+        } catch (NoSuchFileException e) {
+            // if file doesnt exist create one and call method again
+            try (FileWriter file = new FileWriter("config.json")) {
+                file.write(new JSONObject().toString(4));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+            createCharacter(name, description, gender);
+            return;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -72,6 +82,7 @@ public class JSONReader {
             config = new JSONObject();
         }
 
+        // get all characters and delete specific character
         if (config.has("characters")) {
             JSONObject characters = config.getJSONObject("characters");
             characters.remove(key);
