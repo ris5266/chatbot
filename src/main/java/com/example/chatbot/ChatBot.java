@@ -15,6 +15,7 @@ import javafx.stage.Stage;
 import org.json.JSONObject;
 
 import javax.sound.sampled.*;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -50,7 +51,14 @@ public class ChatBot extends Application {
         currentName = firstCharacter.getString("name");
         currentDescription = firstCharacter.getString("description");
         currentGender = firstCharacter.getString("gender");
-        currentModel = "llama3";
+
+        JSONObject config;
+        try {
+            config = new JSONObject(new String(Files.readAllBytes(Paths.get("config.json"))));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        currentModel = config.getString("model");
     }
 
     private void loadCharacters() {
@@ -158,6 +166,7 @@ public class ChatBot extends Application {
         hboxmodel.getChildren().addAll(placeholderField, placeholderButton);
 
         placeholderButton.setOnAction(e -> {
+            JSONReader.changeModel(placeholderField.getText());
             currentModel = placeholderField.getText();
         });
 

@@ -11,8 +11,14 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Paths;
 
 public class BootupScene extends Application {
     private Button submit;
@@ -82,6 +88,27 @@ public class BootupScene extends Application {
                     downloadLabel.setText("Hold on, your character is being created...");
                     JSONReader.createCharacter(name, description, gender);
 
+                    JSONObject config;
+                    try {
+                        // Read the existing JSON file
+                        config = new JSONObject(new String(Files.readAllBytes(Paths.get("config.json"))));
+                    } catch (NoSuchFileException ex) {
+                        // If the file does not exist, create a new one with an empty JSON object
+                        config = new JSONObject();
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+
+                    // Add default model value
+                    config.put("model", "llama3");
+
+                    // Write the modified JSONObject back to the JSON file
+                    try (FileWriter file = new FileWriter("config.json")) {
+                        file.write(config.toString(4));
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+
                     // thread to simulate a progress bar
                     new Thread(() -> {
                         try {
@@ -90,6 +117,7 @@ public class BootupScene extends Application {
                                 ChatBot chatBot = new ChatBot();
                                 try {
                                     chatBot.start(new Stage());
+                                    primaryStage.close();
                                 } catch (Exception ex) {
                                     ex.printStackTrace();
                                 }

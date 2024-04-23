@@ -131,4 +131,49 @@ public class JSONReader {
         }
     }
 
+    public static void changeModel(String model) {
+        String newModel = model;
+        JSONObject config;
+        try {
+            config = new JSONObject(new String(Files.readAllBytes(Paths.get("config.json"))));
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        config.put("model", newModel);
+        try (FileWriter file = new FileWriter("config.json")) {
+            file.write(config.toString(4));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void changeModelValue(String newModelValue) {
+        JSONObject config;
+        try {
+            // Read the existing JSON file
+            config = new JSONObject(new String(Files.readAllBytes(Paths.get("config.json"))));
+        } catch (NoSuchFileException e) {
+            System.out.println("File not found");
+            return;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Change the value of the model
+        if (config.has("model")) {
+            JSONObject model = config.getJSONObject("model");
+            model.put("name", newModelValue);
+        } else {
+            System.out.println("Model not found in the JSON file");
+            return;
+        }
+
+        // Write the modified JSONObject back to the JSON file
+        try (FileWriter file = new FileWriter("config.json")) {
+            file.write(config.toString(4));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
 }
